@@ -19,8 +19,11 @@ scene.add(cube);
 // Device orientation controls
 let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 let initialOrientation = null;
+let orientationEnabled = false;
 
 function handleOrientation(event) {
+    if (!orientationEnabled) return;
+
     if (!initialOrientation) {
         initialOrientation = {
             alpha: event.alpha || 0,
@@ -43,13 +46,39 @@ function handleOrientation(event) {
     camera.quaternion.setFromEuler(euler);
 }
 
+function enableOrientation() {
+    if (orientationEnabled) return;
+    orientationEnabled = true;
+    console.log('Device orientation enabled');
+    // Remove the enable button
+    let button = document.getElementById('enable-vr');
+    if (button) button.remove();
+}
+
 if (window.DeviceOrientationEvent) {
-    if (isIOS) {
-        // iOS requires user interaction to enable device orientation
+    // Add a button to enable VR on iOS
+    let enableButton = document.createElement('button');
+    enableButton.id = 'enable-vr';
+    enableButton.innerHTML = 'Tap to Enable VR';
+    enableButton.style.position = 'absolute';
+    enableButton.style.top = '50%';
+    enableButton.style.left = '50%';
+    enableButton.style.transform = 'translate(-50%, -50%)';
+    enableButton.style.padding = '20px';
+    enableButton.style.fontSize = '20px';
+    enableButton.style.zIndex = '1000';
+    document.body.appendChild(enableButton);
+
+    enableButton.addEventListener('click', () => {
+        enableOrientation();
         window.addEventListener('deviceorientation', handleOrientation, false);
-    } else {
+    });
+
+    // Also enable on touch for mobile
+    window.addEventListener('touchstart', () => {
+        enableOrientation();
         window.addEventListener('deviceorientation', handleOrientation, false);
-    }
+    });
 } else {
     console.log('Device orientation not supported');
 }
