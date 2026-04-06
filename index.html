@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>VR Cricket</title>
+    <title>VR Cricket Mobile</title>
     <style>
         html, body { width:100%; height:100%; margin:0; overflow:hidden; }
         #renderCanvas { width:100%; height:100%; touch-action: none; }
@@ -31,36 +31,44 @@ const createScene = async () => {
     const scene = new BABYLON.Scene(engine);
     scene.enablePhysics(new BABYLON.Vector3(0, -9.81, 0), new BABYLON.CannonJSPlugin());
 
-    // Camera
-    const camera = new BABYLON.UniversalCamera("camera", new BABYLON.Vector3(0, 2, -10), scene);
-    camera.attachControl(canvas, true);
-
     // Light
     const light = new BABYLON.HemisphericLight("light", new BABYLON.Vector3(0, 1, 0), scene);
 
     // Ground / Pitch
     const ground = BABYLON.MeshBuilder.CreateGround("ground", {width: 20, height: 50}, scene);
-    ground.physicsImpostor = new BABYLON.PhysicsImpostor(ground, BABYLON.PhysicsImpostor.BoxImpostor, {mass:0, restitution:0.7}, scene);
+    ground.physicsImpostor = new BABYLON.PhysicsImpostor(
+        ground,
+        BABYLON.PhysicsImpostor.BoxImpostor,
+        {mass:0, restitution:0.7},
+        scene
+    );
 
     // Ball
     const ball = BABYLON.MeshBuilder.CreateSphere("ball", {diameter: 0.3}, scene);
     ball.position = new BABYLON.Vector3(0, 1, 20);
     ball.material = new BABYLON.StandardMaterial("ballMat", scene);
     ball.material.diffuseColor = new BABYLON.Color3(1,0,0);
-    ball.physicsImpostor = new BABYLON.PhysicsImpostor(ball, BABYLON.PhysicsImpostor.SphereImpostor, {mass:1, restitution:0.8}, scene);
+    ball.physicsImpostor = new BABYLON.PhysicsImpostor(
+        ball,
+        BABYLON.PhysicsImpostor.SphereImpostor,
+        {mass:1, restitution:0.8},
+        scene
+    );
 
-    // Bat (simple box for now)
+    // Bat
     const bat = BABYLON.MeshBuilder.CreateBox("bat", {width: 0.2, height: 1, depth: 0.05}, scene);
-    bat.position = new BABYLON.Vector3(0, 1, -5);
     bat.material = new BABYLON.StandardMaterial("batMat", scene);
     bat.material.diffuseColor = new BABYLON.Color3(0,0,1);
-    bat.physicsImpostor = new BABYLON.PhysicsImpostor(bat, BABYLON.PhysicsImpostor.BoxImpostor, {mass:0}, scene);
 
-    // WebXR
+    // WebXR immersive VR
     const xr = await scene.createDefaultXRExperienceAsync({
         uiOptions: { sessionMode: 'immersive-vr' },
         optionalFeatures: true
     });
+
+    // Attach bat to VR camera
+    bat.parent = xr.baseExperience.camera;
+    bat.position = new BABYLON.Vector3(0, -0.5, -1); // in front of camera
 
     // Ball pitching
     const pitchSpeed = 5;
@@ -72,29 +80,19 @@ const createScene = async () => {
         ball.physicsImpostor.setAngularVelocity(new BABYLON.Vector3(0,0,0));
     };
 
-    // Swing detection (simple: tap or space key)
-    window.addEventListener("keydown", e => {
-        if(e.code === "Space") swingBat();
-    });
-    canvas.addEventListener("pointerdown", swingBat);
-
-    function swingBat() {
-        const impulseDir = new BABYLON.Vector3(0,0,10);
-        bat.physicsImpostor.applyImpulse(impulseDir, bat.getAbsolutePosition());
-    }
-
     // Collision detection for scoring
-    ball.physicsImpostor.registerOnPhysicsCollide(bat.physicsImpostor, function(main, collided){
+    ball.physicsImpostor.registerOnPhysicsCollide(bat.physicsImpostor, function(){
         score += 1;
         scoreDiv.innerText = "Score: " + score;
         clearTimeout(ballResetTimeout);
-        ballResetTimeout = setTimeout(resetBall, 1000); // reset after 1 sec
+        ballResetTimeout = setTimeout(resetBall, 1000); // reset ball after 1 sec
     });
 
+    // Move ball toward player
     scene.onBeforeRenderObservable.add(() => {
-        // Move ball toward player
+        const dt = scene.getEngine().getDeltaTime() / 1000;
         const dir = new BABYLON.Vector3(0,0,-1);
-        ball.physicsImpostor.applyImpulse(dir.scale(pitchSpeed*scene.getEngine().getDeltaTime()/1000), ball.getAbsolutePosition());
+        ball.physicsImpostor.applyImpulse(dir.scale(pitchSpeed*dt), ball.getAbsolutePosition());
     });
 
     return scene;
@@ -104,11 +102,7 @@ createScene().then(scene => {
     engine.runRenderLoop(() => scene.render());
 });
 
-window.addEventListener("resize", () => {
-    engine.resize();
-});
+window.addEventListener("resize", () => engine.resize());
 </script>
 </body>
 </html>
-
-
