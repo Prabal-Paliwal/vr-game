@@ -21,6 +21,8 @@ let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 let initialOrientation = null;
 let orientationEnabled = false;
 
+console.log('Script loaded, DeviceOrientationEvent:', !!window.DeviceOrientationEvent);
+
 function handleOrientation(event) {
     if (!orientationEnabled) return;
 
@@ -47,12 +49,15 @@ function handleOrientation(event) {
 }
 
 function enableOrientation() {
+    console.log('enableOrientation called');
     if (orientationEnabled) return;
 
     // Request permission for device orientation on iOS
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        console.log('Requesting permission for iOS');
         DeviceOrientationEvent.requestPermission()
             .then(permissionState => {
+                console.log('Permission state:', permissionState);
                 if (permissionState === 'granted') {
                     orientationEnabled = true;
                     console.log('Device orientation permission granted');
@@ -67,6 +72,7 @@ function enableOrientation() {
             .catch(console.error);
     } else {
         // For non-iOS 13+ devices
+        console.log('Enabling for non-iOS devices');
         orientationEnabled = true;
         console.log('Device orientation enabled');
         window.addEventListener('deviceorientation', handleOrientation, false);
@@ -77,6 +83,7 @@ function enableOrientation() {
 }
 
 if (window.DeviceOrientationEvent) {
+    console.log('DeviceOrientationEvent supported, creating button');
     // Add a button to enable VR on iOS
     let enableButton = document.createElement('button');
     enableButton.id = 'enable-vr';
@@ -88,17 +95,22 @@ if (window.DeviceOrientationEvent) {
     enableButton.style.padding = '20px';
     enableButton.style.fontSize = '20px';
     enableButton.style.zIndex = '1000';
+    enableButton.style.backgroundColor = 'red';
+    enableButton.style.color = 'white';
+    enableButton.style.border = 'none';
+    enableButton.style.borderRadius = '10px';
     document.body.appendChild(enableButton);
+    console.log('Button created and added to DOM');
 
     enableButton.addEventListener('click', () => {
+        console.log('Button clicked');
         enableOrientation();
-        window.addEventListener('deviceorientation', handleOrientation, false);
     });
 
     // Also enable on touch for mobile
     window.addEventListener('touchstart', () => {
+        console.log('Touch detected');
         enableOrientation();
-        window.addEventListener('deviceorientation', handleOrientation, false);
     });
 } else {
     console.log('Device orientation not supported');
