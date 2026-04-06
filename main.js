@@ -1,5 +1,21 @@
-// Create scene
-const scene = new THREE.Scene();
+// Create debug display
+let debugDiv = document.createElement('div');
+debugDiv.id = 'debug-info';
+debugDiv.style.position = 'absolute';
+debugDiv.style.top = '10px';
+debugDiv.style.left = '10px';
+debugDiv.style.backgroundColor = 'rgba(0,0,0,0.7)';
+debugDiv.style.color = 'white';
+debugDiv.style.padding = '10px';
+debugDiv.style.fontFamily = 'monospace';
+debugDiv.style.fontSize = '12px';
+debugDiv.style.zIndex = '1001';
+debugDiv.style.maxWidth = '300px';
+document.body.appendChild(debugDiv);
+
+function updateDebug(info) {
+    debugDiv.innerHTML = info;
+}
 
 // Create camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
@@ -22,6 +38,7 @@ let initialOrientation = null;
 let orientationEnabled = false;
 
 console.log('Script loaded, DeviceOrientationEvent:', !!window.DeviceOrientationEvent);
+updateDebug('Script loaded<br>DeviceOrientationEvent: ' + !!window.DeviceOrientationEvent);
 
 function handleOrientation(event) {
     if (!orientationEnabled) return;
@@ -32,46 +49,62 @@ function handleOrientation(event) {
             beta: event.beta || 0,
             gamma: event.gamma || 0
         };
+        console.log('Initial orientation set:', initialOrientation);
+        updateDebug('Initial orientation set:<br>' + JSON.stringify(initialOrientation, null, 2));
     }
 
     let alpha = (event.alpha || 0) - initialOrientation.alpha;
     let beta = (event.beta || 0) - initialOrientation.beta;
     let gamma = (event.gamma || 0) - initialOrientation.gamma;
 
+    console.log('Orientation:', {alpha, beta, gamma});
+    updateDebug('Current orientation:<br>' +
+        'Alpha (yaw): ' + alpha.toFixed(2) + '°<br>' +
+        'Beta (pitch): ' + beta.toFixed(2) + '°<br>' +
+        'Gamma (roll): ' + gamma.toFixed(2) + '°<br>' +
+        'VR Active!');
+
     // Convert to radians
     alpha = alpha * Math.PI / 180;
     beta = beta * Math.PI / 180;
     gamma = gamma * Math.PI / 180;
 
-    // Set camera rotation directly (like DeviceOrientationControls)
-    camera.rotation.set(beta, alpha, -gamma);
+    // Use quaternion from Euler with YXZ order (common for VR)
+    let euler = new THREE.Euler(-beta, alpha, gamma, 'YXZ');
+    camera.quaternion.setFromEuler(euler);
 }
 
 function enableOrientation() {
     console.log('enableOrientation called');
+    updateDebug('enableOrientation called');
     if (orientationEnabled) return;
 
     // Request permission for device orientation on iOS
     if (typeof DeviceOrientationEvent.requestPermission === 'function') {
         console.log('Requesting permission for iOS');
+        updateDebug('Requesting permission for iOS...');
         DeviceOrientationEvent.requestPermission()
             .then(permissionState => {
                 console.log('Permission state:', permissionState);
+                updateDebug('Permission state: ' + permissionState);
                 if (permissionState === 'granted') {
                     orientationEnabled = true;
                     console.log('Device orientation permission granted');
+                    updateDebug('Device orientation permission granted<br>VR enabled!');
                     window.addEventListener('deviceorientation', handleOrientation, false);
                     // Remove the enable button
                     let button = document.getElementById('enable-vr');
                     if (button) button.remove();
                 } else {
                     console.log('Device orientation permission denied');
+                    updateDebug('Device orientation permission denied');
                 }
             })
             .catch(console.error);
     } else {
         // For non-iOS 13+ devices
         console.log('Enabling for non-iOS devices');
+        updateDebug('Enabling for non-iOS devices<br>VR enabled!');
         orientationEnabled = true;
         console.log('Device orientation enabled');
         window.addEventListener('deviceorientation', handleOrientation, false);
@@ -83,6 +116,7 @@ function enableOrientation() {
 
 if (window.DeviceOrientationEvent) {
     console.log('DeviceOrientationEvent supported, creating button');
+    updateDebug('DeviceOrientationEvent supported<br>Creating enable button...');
     // Add a button to enable VR on iOS
     let enableButton = document.createElement('button');
     enableButton.id = 'enable-vr';
@@ -100,19 +134,23 @@ if (window.DeviceOrientationEvent) {
     enableButton.style.borderRadius = '10px';
     document.body.appendChild(enableButton);
     console.log('Button created and added to DOM');
+    updateDebug('Button created and added to DOM<br>Tap the red button to enable VR');
 
     enableButton.addEventListener('click', () => {
         console.log('Button clicked');
+        updateDebug('Button clicked<br>Requesting permission...');
         enableOrientation();
     });
 
     // Also enable on touch for mobile
     window.addEventListener('touchstart', () => {
         console.log('Touch detected');
+        updateDebug('Touch detected<br>Enabling orientation...');
         enableOrientation();
     });
 } else {
     console.log('Device orientation not supported');
+    updateDebug('Device orientation not supported');
 }
 
 // Animation loop
