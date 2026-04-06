@@ -17,6 +17,9 @@ function updateDebug(info) {
     debugDiv.innerHTML = info;
 }
 
+// Create scene
+const scene = new THREE.Scene();
+
 // Create camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 camera.position.z = 5;
@@ -34,7 +37,7 @@ scene.add(cube);
 
 // Device orientation controls
 let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-let initialOrientation = null;
+let initialOrientation = null;  
 let orientationEnabled = false;
 
 console.log('Script loaded, DeviceOrientationEvent:', !!window.DeviceOrientationEvent);
