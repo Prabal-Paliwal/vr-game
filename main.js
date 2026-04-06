@@ -48,11 +48,32 @@ function handleOrientation(event) {
 
 function enableOrientation() {
     if (orientationEnabled) return;
-    orientationEnabled = true;
-    console.log('Device orientation enabled');
-    // Remove the enable button
-    let button = document.getElementById('enable-vr');
-    if (button) button.remove();
+
+    // Request permission for device orientation on iOS
+    if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+            .then(permissionState => {
+                if (permissionState === 'granted') {
+                    orientationEnabled = true;
+                    console.log('Device orientation permission granted');
+                    window.addEventListener('deviceorientation', handleOrientation, false);
+                    // Remove the enable button
+                    let button = document.getElementById('enable-vr');
+                    if (button) button.remove();
+                } else {
+                    console.log('Device orientation permission denied');
+                }
+            })
+            .catch(console.error);
+    } else {
+        // For non-iOS 13+ devices
+        orientationEnabled = true;
+        console.log('Device orientation enabled');
+        window.addEventListener('deviceorientation', handleOrientation, false);
+        // Remove the enable button
+        let button = document.getElementById('enable-vr');
+        if (button) button.remove();
+    }
 }
 
 if (window.DeviceOrientationEvent) {
