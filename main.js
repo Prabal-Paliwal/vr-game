@@ -43,9 +43,8 @@ function handleOrientation(event) {
     beta = beta * Math.PI / 180;
     gamma = gamma * Math.PI / 180;
 
-    // Create quaternion from Euler angles
-    let euler = new THREE.Euler(beta, alpha, -gamma, 'YXZ');
-    camera.quaternion.setFromEuler(euler);
+    // Set camera rotation directly (like DeviceOrientationControls)
+    camera.rotation.set(beta, alpha, -gamma);
 }
 
 function enableOrientation() {
