@@ -68,9 +68,6 @@ function handleOrientation(event) {
     let alpha = normalizeAngle(event.alpha || 0);
     let gamma = -((event.gamma || 0) - initialOrientation.gamma); // Invert up/down
 
-    // Clamp gamma to prevent extreme angles where cube disappears
-    gamma = Math.max(-60, Math.min(60, gamma));
-
     console.log('Orientation:', {alpha, gamma});
     updateDebug('Current orientation:<br>' +
         'Alpha (left/right): ' + alpha.toFixed(2) + '°<br>' +
