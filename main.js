@@ -54,11 +54,23 @@ function handleOrientation(event) {
         };
         console.log('Initial orientation set:', initialOrientation);
         updateDebug('Initial orientation set:<br>' + JSON.stringify(initialOrientation, null, 2));
+        return; // Skip first frame to establish baseline
     }
 
-    let alpha = (event.alpha || 0) - initialOrientation.alpha;
+    // Normalize angles to handle 0/359 wrapping
+    let normalizeAngle = (a) => {
+        a = a - initialOrientation.alpha;
+        if (a > 180) a -= 360;
+        if (a < -180) a += 360;
+        return a;
+    };
+
+    let alpha = normalizeAngle(event.alpha || 0);
     let beta = (event.beta || 0) - initialOrientation.beta;
     let gamma = (event.gamma || 0) - initialOrientation.gamma;
+
+    // Clamp beta to prevent gimbal lock
+    beta = Math.max(-89.9, Math.min(89.9, beta));
 
     console.log('Orientation:', {alpha, beta, gamma});
     updateDebug('Current orientation:<br>' +
@@ -68,12 +80,13 @@ function handleOrientation(event) {
         'VR Active!');
 
     // Convert to radians
-    alpha = alpha * Math.PI / 180;
-    beta = beta * Math.PI / 180;
-    gamma = gamma * Math.PI / 180;
+    let alphaRad = alpha * Math.PI / 180;
+    let betaRad = beta * Math.PI / 180;
+    let gammaRad = gamma * Math.PI / 180;
 
-    // Use quaternion from Euler with YXZ order (common for VR)
-    let euler = new THREE.Euler(-beta, alpha, gamma, 'YXZ');
+    // Standard device orientation to camera rotation
+    // YXZ order is standard for VR/device orientation
+    let euler = new THREE.Euler(betaRad, alphaRad, gammaRad, 'YXZ');
     camera.quaternion.setFromEuler(euler);
 }
 
