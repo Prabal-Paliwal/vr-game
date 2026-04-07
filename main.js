@@ -66,27 +66,23 @@ function handleOrientation(event) {
     };
 
     let alpha = normalizeAngle(event.alpha || 0);
-    let beta = (event.beta || 0) - initialOrientation.beta;
     let gamma = (event.gamma || 0) - initialOrientation.gamma;
 
-    // Clamp beta to prevent gimbal lock
-    beta = Math.max(-89.9, Math.min(89.9, beta));
+    // Clamp gamma to prevent gimbal lock
+    gamma = Math.max(-89.9, Math.min(89.9, gamma));
 
-    console.log('Orientation:', {alpha, beta, gamma});
+    console.log('Orientation:', {alpha, gamma});
     updateDebug('Current orientation:<br>' +
-        'Alpha (yaw): ' + alpha.toFixed(2) + '°<br>' +
-        'Beta (pitch): ' + beta.toFixed(2) + '°<br>' +
-        'Gamma (roll): ' + gamma.toFixed(2) + '°<br>' +
+        'Alpha (left/right): ' + alpha.toFixed(2) + '°<br>' +
+        'Gamma (up/down): ' + gamma.toFixed(2) + '°<br>' +
         'VR Active!');
 
     // Convert to radians
     let alphaRad = alpha * Math.PI / 180;
-    let betaRad = beta * Math.PI / 180;
     let gammaRad = gamma * Math.PI / 180;
 
-    // Standard device orientation to camera rotation
-    // YXZ order is standard for VR/device orientation
-    let euler = new THREE.Euler(betaRad, alphaRad, gammaRad, 'YXZ');
+    // Use alpha for yaw (left/right) and gamma for pitch (up/down)
+    let euler = new THREE.Euler(gammaRad, alphaRad, 0, 'YXZ');
     camera.quaternion.setFromEuler(euler);
 }
 
